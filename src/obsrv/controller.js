@@ -15,6 +15,10 @@ const success = {
     status : 200,
     message : "Database operation completed successfully."
 }
+const idrequire = {
+    status : 400,
+    message : "Invalid input :Id is required"
+}
 
 const readAllDataset = (req, res) =>{
     pool.query(queries.readAllDataset, (error, results) =>{
@@ -43,7 +47,7 @@ const readDataset = (req, res) => {
         if (noDataFound) {
           res.status(404).send(emptyerror);
         }
-        else{
+        else {
             res.status(200).json(results.rows[0]);
         }
     });
@@ -70,17 +74,17 @@ const schema = Joi.object({
     updated_date: Joi.date().iso().required(),
     published_date: Joi.date().iso().required()
 });
+
 const createDataset = (req, res) => {
-    const {id, dataset_id, type, name, validation_config, extraction_config, dedup_config, data_schema, denorm_config, router_config, dataset_config, tags, data_version, status, created_by, updated_by, created_date, updated_date, published_date} = req.body;
+    const { id, dataset_id, type, name, validation_config, extraction_config, dedup_config, data_schema, denorm_config, router_config, dataset_config, tags, data_version, status, created_by, updated_by, created_date, updated_date, published_date } = req.body;
+
     // Validate the request body against the defined schema
     const { error } = schema.validate(req.body);
     if (error) {
         console.error('Error in request body validation:', error.details);
-        return res.status(400).send({
-            status : 400,
-            message : "Invalid input :Id is required"
-        });
+        return res.status(400).json({ error: error.details[0].message });
     }
+
     // check for id 
     pool.query(queries.checkIdExists, [id], (error, results) => {
         if (error) {
@@ -88,21 +92,22 @@ const createDataset = (req, res) => {
             return res.status(500).send(internalError);
         }
         if (results.rows.length) {
-            return res.status(419).send({
-                status : 419,
-                message : "page expired"
+            return res.status(404).send({
+                status: 404,
+                message: "Id already exist"
             });
         }
         // add data to database
         pool.query(queries.createDataset, [id, dataset_id, type, name, validation_config, extraction_config, dedup_config, data_schema, denorm_config, router_config, dataset_config, tags, data_version, status, created_by, updated_by, created_date, updated_date, published_date], (error, results) => {
             if (error) {
-                console.error(`Error creating dataset:`, error);
-                return res.status(500).send(internalError);
-            }      
-            res.status(201).send(success);
+                console.error(error);
+                return res.status(500).send('Internal Server Error');
+            }
+            res.status(201).json(success);
         });
     });
 };
+
 
 const deleteDataset = (req, res) => {
     const id = req.params.id;
@@ -111,12 +116,13 @@ const deleteDataset = (req, res) => {
         if (noDatafound) {
             res.status(404).send(emptyerror);
         }
+        else {
         pool.query(queries.deleteDataset,[id], (error, results) => {
             if (error) {
                 res.status(500).send(internalError);
             }
             res.status(200).send(success);
-        })
+        })}
     });
 };
 

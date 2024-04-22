@@ -6,14 +6,17 @@ services:
       POSTGRES_PASSWORD: obsrv123
       POSTGRES_USER: postgres
       POSTGRES_DB : obsrv 
-    networks:
-    - api  
+    # networks:
+    # - api  
     ports:
     - "5432:5432"
     volumes:
     - volumne_one:/var/lib/postgresql/data/
     - ./postgres:/docker-entrypoint-initdb.d
+
+
   app:
+    image: cruidapi-app
     build: 
       context: .
     environment:
@@ -23,13 +26,13 @@ services:
       host: db
     depends_on:
       - db
-    networks:
-      - api
+    # networks:
+    #   - api
     ports:
       - "3000:3000"
-networks:
-  api:
-    driver: bridge
+# networks:
+#   api:
+#     driver: bridge
 
 volumes:
   volumne_one:
